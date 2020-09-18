@@ -59,7 +59,7 @@ assert str(append_name), u"Invalid sound effect name"
 comparable_name = input("Enter the name of a comparable sound effect (metadata): ")
 assert str(comparable_name), u"Invalid sound effect name"
 file_as_string = mmap.mmap(nus3bank.fileno(), 0, access=mmap.ACCESS_READ)
-comparable_offset = file_as_string.find(bytes(comparable_name, 'utf8'))
+comparable_offset = file_as_string.find(bytes(comparable_name, 'utf8'), toneOffset)
 assert comparable_offset != -1, u"Comparable sound effect not found in this file. Are you sure you spelled it right?"
 nus3bank.seek(comparable_offset)
 comparable_size = get_sub_meta_size(nus3bank)
@@ -70,14 +70,13 @@ while nus3bank.tell() % 4 != 0:
 while readu32le(nus3bank) != 0x22E8:
     pass
 comparable_meta_data = nus3bank.read(comparable_size)
+nus3bank.seek(comparable_offset - 0xD)
+comparable_pre_meta_data = nus3bank.read(0xC)
 nus3bank.seek(toneOffset + 12 + (toneCount - 1) * 8)
 lastToneOffset = readu32le(nus3bank)
 lastToneSize = readu32le(nus3bank)
-newToneSize = comparable_size + 28 + len(append_name)
-if len(append_name) % 4 != 0:
-    newToneSize += 4 - (len(append_name) % 4)
-else:
-    newToneSize += 4
+newToneSize = comparable_size + 28 + len(append_name) + 1
+newToneSize += 4 - ((len(append_name) + 1) % 4)
 nus3bank.seek(0)
 original_file = nus3bank.read()
 nus3bank.close()
@@ -105,12 +104,12 @@ while counter < toneCount:
 nus3bank.write(struct.pack(b"<I", lastToneOffset + lastToneSize + 8))
 nus3bank.write(struct.pack(b"<I", newToneSize))
 nus3bank.write(original_file[(toneOffset + 12 + toneCount * 8):(toneOffset + 8 + lastToneOffset + lastToneSize)])
-nus3bank.write(struct.pack(b"<I", 0))
-nus3bank.write(struct.pack(b"<I", 0x87E7FFFF)) #these three lines are common in all the meta data I've seen so far. /shrug
-nus3bank.write(struct.pack(b"<I", 0x000C981F))
+nus3bank.write(comparable_pre_meta_data);
 nus3bank.write(struct.pack(b"B", len(append_name) + 1))
 nus3bank.write(bytes(append_name, 'utf8'))
 counter = len(append_name) + 1
+if counter % 4 == 0:
+    nus3bank.write(struct.pack(b"<I", 0))
 while counter % 4 != 0:
     nus3bank.write(struct.pack(b"B", 0))
     counter += 1
