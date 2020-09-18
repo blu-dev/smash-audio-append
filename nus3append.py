@@ -43,6 +43,7 @@ contentCount = readu32le(nus3bank)
 offset = 0x14 + tocSize
 for i in range(contentCount):
     content = nus3bank.read(4)
+    toneHeaderOffset = nus3bank.tell()
     contentSize = readu32le(nus3bank)
     if content == b"TONE":
         toneOffset = offset
@@ -88,7 +89,9 @@ else:
 nus3bank.seek(0)
 nus3bank.write(b"NUS3")
 nus3bank.write(struct.pack(b"<I", size + newToneSize + 8))
-nus3bank.write(original_file[8:(toneOffset + 4)])
+nus3bank.write(original_file[8:toneHeaderOffset])
+nus3bank.write(struct.pack(b"<I", toneSize + newToneSize + 8))
+nus3bank.write(original_file[(toneHeaderOffset + 4):(toneOffset + 4)])
 nus3bank.write(struct.pack(b"<I", toneSize + newToneSize + 8))
 modified_count = struct.pack(b"<I", toneCount + 1);
 nus3bank.write(modified_count)
@@ -118,4 +121,4 @@ nus3bank.write(struct.pack(b"<I", 0x22E8))
 nus3bank.write(comparable_meta_data)
 nus3bank.write(original_file[(toneOffset + 8 + lastToneOffset + lastToneSize):])
 nus3bank.close()
-print("Added entry", toneCount, "to", filepath)
+print("Added entry", toneCount, "to", filepath, "uwu")

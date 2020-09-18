@@ -73,4 +73,4 @@ else:
     sli.write(comp_data)
     sli.write(struct.pack(b"<I", new_index))
     sli.write(original_data[(0xC + 0x10 * new_offset):])
-print("Added sound label", new_sound_label, "(", hex(new_hash), ") to", filepath)
+print("Added sound label", new_sound_label, "(", hex(new_hash), ") to", filepath, "owo")
