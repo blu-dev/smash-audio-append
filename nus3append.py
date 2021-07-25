@@ -3,7 +3,7 @@ import os
 import struct
 import mmap
 
-filepath = input("Enter the path of your file: ")
+filepath = input("Enter the filepath to nus3bank: ")
 
 def readu32le(file):
     return struct.unpack(b"<I", file.read(4))[0]
@@ -80,11 +80,7 @@ newToneSize += 4 - ((len(append_name) + 1) % 4)
 nus3bank.seek(0)
 original_file = nus3bank.read()
 nus3bank.close()
-extension_index = filepath.find('.')
-if extension_index == -1:
-    nus3bank = open(filepath + "_appended", u'wb+')
-else:
-    nus3bank = open(filepath[:extension_index] + "_appended" + filepath[extension_index:], u'wb+')
+nus3bank = open(filepath, u'rb+')
 nus3bank.seek(0)
 nus3bank.write(b"NUS3")
 nus3bank.write(struct.pack(b"<I", size + newToneSize + 8))
@@ -119,5 +115,13 @@ nus3bank.write(struct.pack(b"<I", 0))
 nus3bank.write(struct.pack(b"<I", 0x22E8))
 nus3bank.write(comparable_meta_data)
 nus3bank.write(original_file[(toneOffset + 8 + lastToneOffset + lastToneSize):])
+nus3bank.close()
+extension_index = filepath.find('.')
+extension_count = len([f for f in os.listdir(os.path.dirname(os.path.abspath(filepath))) if f.endswith(filepath[extension_index:]) and os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(filepath)), f))])
+if extension_index == -1:
+    nus3bank = open(filepath + "_backup_" + str(extension_count), u'wb+')
+else:
+    nus3bank = open(filepath[:extension_index] + "_backup_" + str(extension_count) + filepath[extension_index:], u'wb+')
+nus3bank.write(original_file)
 nus3bank.close()
 print("Added entry", toneCount, "to", filepath, "uwu")

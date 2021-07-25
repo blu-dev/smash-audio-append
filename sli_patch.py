@@ -11,7 +11,6 @@ def readu32le(file):
 
 def gen_hash40(label):
     return (len(label) << 32) | zlib.crc32(bytes(label, 'utf8'))
-
 filepath = input("Enter the filepath to soundlabelinfo.sli: ")
 assert os.path.exists(filepath), "File not found: " + str(filepath)
 sli = open(filepath, u'rb+')
@@ -53,11 +52,7 @@ sli.seek(0)
 original_data = sli.read()
 sli.close()
 comp_data = original_data[(0xC + 0x10 * comp_offset + 0x8):(0xC + 0x10 * comp_offset + 0xC)]
-extension_index = filepath.find('.')
-if extension_index == -1:
-    sli = open(filepath + "_appended", u'wb+')
-else:
-    sli = open(filepath[:extension_index] + "_appended" + filepath[extension_index:], u'wb+')
+sli = open(filepath, u'rb+')
 sli.write(b"SLI")
 sli.write(struct.pack(b"B", 0))
 sli.write(struct.pack(b"<I", 0x1))
@@ -73,4 +68,13 @@ else:
     sli.write(comp_data)
     sli.write(struct.pack(b"<I", new_index))
     sli.write(original_data[(0xC + 0x10 * new_offset):])
+
+extension_index = filepath.find('.')
+extension_count = len([f for f in os.listdir(os.path.dirname(os.path.abspath(filepath))) if f.endswith(filepath[extension_index:]) and os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(filepath)), f))])
+if extension_index == -1:
+    sli = open(filepath + "_backup_" + str(extension_count), u'wb+')
+else:
+    sli = open(filepath[:extension_index] + "_backup_" + str(extension_count) + filepath[extension_index:], u'wb+')
+sli.write(original_data)
+sli.close()
 print("Added sound label", new_sound_label, "(", hex(new_hash), ") to", filepath, "owo")
